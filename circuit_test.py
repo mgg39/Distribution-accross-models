@@ -1,7 +1,8 @@
 import numpy as np
 
 from circuit import Circuit
-from circuit_to_MB import circuit_to_graph
+from circuit_to_MB import circuit_to_graph, validate_graph
+from circuit_to_qw import circuit_to_walk
 
 # Example usage of the Circuit class
 def main():
@@ -18,11 +19,19 @@ def main():
     circuit.m(2, "Y-Z", np.pi / 4)  # Measure qubit 2 in Y-Z plane
     circuit.m(3, "X-Z", np.pi / 6)  # Measure qubit 3 in X-Z plane
 
+    print("Circuit: \n----------------------------")
     for instruction in circuit.instructions:
         print(instruction)
     
+    print("Measurement based Graph state: \n----------------------------")
     graph_state = circuit_to_graph(circuit)
     print(graph_state)
+
+    validate_graph(circuit, graph_state)
+
+    print(" \n Quantum walk graph: \n----------------------------")
+    walk_graph = circuit_to_walk(circuit)
+    print(walk_graph)
 
 if __name__ == "__main__":
     main()
