@@ -22,7 +22,8 @@ def circuit_to_graph(circuit):
     # Parse circuit instructions
     for instruction in circuit.instructions:
         if instruction[0] == "H":
-            pass  # H modifies state, no explicit measurement
+            qubit = instruction[1]
+            graph.add_hadamard(qubit) 
         elif instruction[0] == "CNOT":
             control, target = instruction[1], instruction[2]
             graph.add_edge(control, target)  # Add entanglement edge
@@ -55,9 +56,23 @@ def circuit_to_graph(circuit):
             graph.add_edge(control, target)  # Add entanglement edge
         elif instruction[0] == "CCX":
             control1, control2, target = instruction[1], instruction[2], instruction[3]
-            graph.add_edge(control1, control2)
+            # Hadamard on target
+            graph.add_hadamard(target)
+            # CNOTs: Add edges corresponding to entanglement
+            graph.add_edge(control2, target)
             graph.add_edge(control1, target)
             graph.add_edge(control2, target)
+            graph.add_edge(control1, target)
+            graph.add_edge(control1, control2)
+            # Modify basis measurement with angle accumulation
+            graph.modify_basis_measurement(target, "X-Z", -np.pi / 4)  # T† gate
+            graph.modify_basis_measurement(target, "X-Z", np.pi / 4)   # T gate
+            graph.modify_basis_measurement(target, "X-Z", -np.pi / 4)  # T† gate
+            graph.modify_basis_measurement(control2, "X-Z", np.pi / 4)  # T gate
+            graph.modify_basis_measurement(control1, "X-Z", np.pi / 4)  # T gate
+            graph.modify_basis_measurement(control2, "X-Z", -np.pi / 2)  # S† gate
+            # Hadamard on target (final step)
+            graph.add_hadamard(target)
         else:
             raise ValueError(f"Unknown instruction '{instruction[0]}' encountered.")
 

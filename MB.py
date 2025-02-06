@@ -21,11 +21,33 @@ class GraphState:
         else:
             # Update an existing entry
             current_basis, current_angle = self.measurements[qubit]
-            if current_basis != basis:
+            # Allow X → X-Z conversion but prevent incompatible transitions
+            if current_basis == "X" and basis == "X-Z":
+                pass  # Allow this
+            elif current_basis != basis:
                 raise ValueError(f"Conflicting basis changes for qubit {qubit}: {current_basis} vs {basis}")
             if angle is not None:
-                new_angle = current_angle + angle if current_angle else angle
-                self.measurements[qubit] = (basis, new_angle)
+                self.measurements[qubit] = (basis, (current_angle or 0) + angle) 
+
+    def add_hadamard(self, qubit):
+        """
+        In MBQC, applying a Hadamard gate means changing the measurement basis.
+        - If measuring in Z-basis → Measure in X-basis.
+        - If measuring in X-basis → Measure in Z-basis.
+        - If Hadamard at start → Just treat qubit as pre-prepared in |+> instead of |0>.
+        """
+        if qubit in self.measurements:
+            basis, angle = self.measurements[qubit]
+            if basis == "Z":
+                new_basis = "X"
+            elif basis == "X":
+                new_basis = "Z"
+            else:
+                new_basis = basis  # Leave unchanged for non-Z/X bases
+            self.measurements[qubit] = (new_basis, angle)
+        else:
+            # If no measurement, assume initial preparation in |+>
+            self.measurements[qubit] = ("X", None)
 
     def __str__(self):
         return f"Nodes: {self.nodes}\nEdges: {self.edges}\nMeasurements: {self.measurements}"
